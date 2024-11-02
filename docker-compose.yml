@@ -1,0 +1,59 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: upfilex-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - DB_HOST=mysql
+      - DB_USER=root
+      - DB_PASSWORD=yourpassword
+      - DB_NAME=upfilex_db
+    networks:
+      - upfilex-network
+    depends_on:
+      - mysql  # Add this line to ensure MySQL starts first
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: upfilex-frontend
+    ports:
+      - "3000:80"
+    networks:
+      - upfilex-network
+
+  mysql:
+    image: mysql:8.0
+    container_name: upfilex-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: yourpassword
+      MYSQL_DATABASE: upfilex_db
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - upfilex-network
+
+  nginx:
+    image: nginx:latest
+    container_name: upfilex-nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend
+      - backend
+    command: /bin/sh -c "sleep 10 && nginx -g 'daemon off;'"
+    networks:
+      - upfilex-network
+
+networks:
+  upfilex-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
